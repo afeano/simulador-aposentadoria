@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulador de Aposentadoria Previ Futuro</title>
+    <style>
+        body { font-family: Arial, sans-serif; background-color: #f0f4f8; color: #333; margin: 0; padding: 20px; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
+        .container { background-color: #fff; padding: 30px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); max-width: 600px; width: 100%; }
+        h1 { color: #003366; text-align: center; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; }
+        input[type="number"], select { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+        .btn { background-color: #005a9e; color: white; padding: 12px 20px; border: none; border-radius: 4px; cursor: pointer; width: 100%; font-size: 16px; }
+        .btn:hover { background-color: #004a8a; }
+        .result { margin-top: 20px; padding: 15px; background-color: #e6f7ff; border: 1px solid #b3e0ff; border-radius: 4px; text-align: center; }
+        .result h2 { margin: 0; font-size: 1.5em; color: #003366; }
+        .beneficiario-group { border: 1px dashed #ccc; padding: 15px; border-radius: 4px; margin-top: 20px; }
+        .beneficiario-group legend { font-weight: bold; color: #555; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Simulador de Aposentadoria</h1>
+        <p style="text-align: center;">Baseado no Regulamento do Plano Previ Futuro.</p>
+        
+        <form action="/simular" method="post">
+            <div class="form-group">
+                <label for="saldo_conta">Qual o seu capital total disponível (Saldo de Conta)?</label>
+                <input type="number" id="saldo_conta" name="saldo_conta" step="any" required value="{{ form_data.saldo_conta if form_data }}">
+            </div>
+
+            <div class="form-group">
+                <label for="idade_participante">Sua Idade:</label>
+                <input type="number" id="idade_participante" name="idade_participante" min="50" max="65" required value="{{ form_data.idade_participante if form_data }}">
+            </div>
+
+            <div class="form-group">
+                <label for="sexo_participante">Seu Sexo:</label>
+                <select id="sexo_participante" name="sexo_participante" required>
+                    <option value="M" {% if form_data and form_data.sexo_participante == 'M' %}selected{% endif %}>Masculino</option>
+                    <option value="F" {% if form_data and form_data.sexo_participante == 'F' %}selected{% endif %}>Feminino</option>
+                </select>
+            </div>
+
+            <fieldset class="beneficiario-group">
+                <legend>Deixar Pensão para Beneficiário? (Opcional)</legend>
+                <div class="form-group">
+                    <label for="idade_beneficiario">Idade do Beneficiário:</label>
+                    <input type="number" id="idade_beneficiario" name="idade_beneficiario" min="50" max="65" value="{{ form_data.idade_beneficiario if form_data }}">
+                </div>
+                <div class="form-group">
+                    <label for="sexo_beneficiario">Sexo do Beneficiário:</label>
+                    <select id="sexo_beneficiario" name="sexo_beneficiario">
+                        <option value="">Selecione...</option>
+                        <option value="M" {% if form_data and form_data.sexo_beneficiario == 'M' %}selected{% endif %}>Masculino</option>
+                        <option value="F" {% if form_data and form_data.sexo_beneficiario == 'F' %}selected{% endif %}>Feminino</option>
+                    </select>
+                </div>
+            </fieldset>
+            
+              
+
+            <button type="submit" class="btn">Simular Renda Mensal</button>
+        </form>
+
+        {% if resultado %}
+        <div class="result">
+            <h2>Renda Mensal de Aposentadoria Estimada:</h2>
+            <h2>{{ resultado }}</h2>
+        </div>
+        {% endif %}
+    </div>
+</body>
+</html>
