@@ -24,7 +24,7 @@
         <h1>Simulador de Aposentadoria</h1>
         <p style="text-align: center;">Utilizando a tábua atuarial BR-EMSsb-V.2015 (suavizada).</p>
         
-        <form action="/simular" method="post">
+        <form action="/" method="post">
             <div class="form-group">
                 <label for="saldo_conta">Qual o seu capital total disponível (Saldo de Conta)?</label>
                 <input type="number" id="saldo_conta" name="saldo_conta" step="any" required value="{{ form_data.saldo_conta if form_data }}">
