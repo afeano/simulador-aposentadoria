@@ -1,13 +1,19 @@
 from flask import Flask, render_template, request
 import pandas as pd
 import io
+import os
 
-app = Flask(__name__)
+# --- Configuração do Flask (funciona para Render e Vercel) ---
+# Verifica se está no ambiente Vercel para ajustar o caminho dos templates
+if os.environ.get('VERCEL'):
+    template_dir = os.path.abspath('../templates')
+    app = Flask(__name__, template_folder=template_dir)
+else:
+    app = Flask(__name__) # Para Render e execução local
 
 def obter_fator_anuidade(idade, sexo):
     """
-    Utiliza a tabela atuarial BR-EMSsb-V.2015 (suavizada em 10%) para obter o fator de anuidade.
-    Os fatores foram pré-calculados considerando uma taxa de juros atuarial de 4,5% a.a.
+    Utiliza a tabela atuarial BR-EMSsb-V.2015 (suavizada em 10%).
     """
     tabela_fatores_str = """idade,sexo,fator_anuidade
 50,M,16.45
@@ -54,60 +60,50 @@ def obter_fator_anuidade(idade, sexo):
 70,F,10.57
 """
     tabela_df = pd.read_csv(io.StringIO(tabela_fatores_str))
-    
     fator = tabela_df[(tabela_df['idade'] == idade) & (tabela_df['sexo'] == sexo)]
-    
-    if not fator.empty:
-        return fator.iloc[0]['fator_anuidade']
-    else:
-        # Retorna 0 ou lança um erro se a idade/sexo não for encontrado.
-        # Retornar 0 é mais seguro para evitar cálculos inesperados.
-        return 0.0
+    return fator.iloc[0]['fator_anuidade'] if not fator.empty else 0.0
 
-@app.route('/')
-def index():
-    return render_template('index.html')
+# --- ROTA UNIFICADA: A GRANDE MUDANÇA ESTÁ AQUI ---
+@app.route('/', methods=['GET', 'POST'])
+def simulador():
+    resultado = None
+    form_data = {}
 
-@app.route('/simular', methods=['POST'])
-def simular():
-    try:
-        saldo_conta = float(request.form['saldo_conta'])
-        idade_participante = int(request.form['idade_participante'])
-        sexo_participante = request.form['sexo_participante']
-        
-        idade_beneficiario_str = request.form.get('idade_beneficiario')
-        sexo_beneficiario = request.form.get('sexo_beneficiario')
-
-        aa = obter_fator_anuidade(idade_participante, sexo_participante)
-        ap = 0.0
-
-        # Validação para garantir que o participante foi encontrado na tábua
-        if aa == 0.0:
-            resultado = f"Erro: Idade ({idade_participante}) ou sexo ({sexo_participante}) do participante fora dos parâmetros da tábua atuarial."
-            return render_template('index.html', resultado=resultado, form_data=request.form)
-
-        if idade_beneficiario_str and sexo_beneficiario:
-            idade_beneficiario = int(idade_beneficiario_str)
-            ap = obter_fator_anuidade(idade_beneficiario, sexo_beneficiario)
-            if ap == 0.0:
-                resultado = f"Erro: Idade ({idade_beneficiario}) ou sexo ({sexo_beneficiario}) do beneficiário fora dos parâmetros da tábua atuarial."
-                return render_template('index.html', resultado=resultado, form_data=request.form)
-
-        denominador = 13 * (aa + ap)
-        if denominador == 0:
-            resultado = "Erro: Fatores de anuidade resultaram em zero. Verifique os dados de entrada."
-            return render_template('index.html', resultado=resultado, form_data=request.form)
+    if request.method == 'POST':
+        try:
+            # Pega os dados do formulário enviado
+            form_data = request.form
+            saldo_conta = float(form_data['saldo_conta'])
+            idade_participante = int(form_data['idade_participante'])
+            sexo_participante = form_data['sexo_participante']
             
-        rma = saldo_conta / denominador
-        
-        # Formata o resultado para o padrão brasileiro (ex: R$ 1.234,56)
-        resultado_formatado = f"R$ {rma:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
-        
-        return render_template('index.html', resultado=resultado_formatado, form_data=request.form)
+            idade_beneficiario_str = form_data.get('idade_beneficiario')
+            sexo_beneficiario = form_data.get('sexo_beneficiario')
 
-    except (ValueError, TypeError) as e:
-        resultado = f"Erro nos dados de entrada. Por favor, verifique os valores. Detalhe: {e}"
-        return render_template('index.html', resultado=resultado, form_data=request.form)
+            aa = obter_fator_anuidade(idade_participante, sexo_participante)
+            ap = 0.0
 
-if __name__ == '__main__':
-    app.run(debug=True)
+            if aa == 0.0:
+                resultado = f"Erro: Idade ({idade_participante}) ou sexo do participante fora dos parâmetros."
+            else:
+                if idade_beneficiario_str and sexo_beneficiario:
+                    idade_beneficiario = int(idade_beneficiario_str)
+                    ap = obter_fator_anuidade(idade_beneficiario, sexo_beneficiario)
+                    if ap == 0.0:
+                        resultado = f"Erro: Idade ({idade_beneficiario}) ou sexo do beneficiário fora dos parâmetros."
+
+                if not resultado: # Se não houve erro até agora, calcula
+                    denominador = 13 * (aa + ap)
+                    if denominador == 0:
+                        resultado = "Erro: Fatores de anuidade resultaram em zero."
+                    else:
+                        rma = saldo_conta / denominador
+                        resultado = f"R$ {rma:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+        
+        except (ValueError, TypeError) as e:
+            resultado = f"Erro nos dados de entrada. Verifique os valores."
+
+    # Renderiza a mesma página para GET e POST
+    # Se for POST, envia o resultado e os dados do formulário de volta
+    return render_template('index.html', resultado=resultado, form_data=form_data)
+
