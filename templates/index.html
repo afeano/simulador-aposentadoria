@@ -22,7 +22,7 @@
 <body>
     <div class="container">
         <h1>Simulador de Aposentadoria</h1>
-        <p style="text-align: center;">Baseado no Regulamento do Plano Previ Futuro.</p>
+        <p style="text-align: center;">Utilizando a tábua atuarial BR-EMSsb-V.2015 (suavizada).</p>
         
         <form action="/simular" method="post">
             <div class="form-group">
@@ -31,8 +31,8 @@
             </div>
 
             <div class="form-group">
-                <label for="idade_participante">Sua Idade:</label>
-                <input type="number" id="idade_participante" name="idade_participante" min="50" max="65" required value="{{ form_data.idade_participante if form_data }}">
+                <label for="idade_participante">Sua Idade (entre 50 e 70 anos):</label>
+                <input type="number" id="idade_participante" name="idade_participante" min="50" max="70" required value="{{ form_data.idade_participante if form_data }}">
             </div>
 
             <div class="form-group">
@@ -46,8 +46,8 @@
             <fieldset class="beneficiario-group">
                 <legend>Deixar Pensão para Beneficiário? (Opcional)</legend>
                 <div class="form-group">
-                    <label for="idade_beneficiario">Idade do Beneficiário:</label>
-                    <input type="number" id="idade_beneficiario" name="idade_beneficiario" min="50" max="65" value="{{ form_data.idade_beneficiario if form_data }}">
+                    <label for="idade_beneficiario">Idade do Beneficiário (entre 50 e 70 anos):</label>
+                    <input type="number" id="idade_beneficiario" name="idade_beneficiario" min="50" max="70" value="{{ form_data.idade_beneficiario if form_data }}">
                 </div>
                 <div class="form-group">
                     <label for="sexo_beneficiario">Sexo do Beneficiário:</label>
@@ -73,3 +73,4 @@
     </div>
 </body>
 </html>
+
